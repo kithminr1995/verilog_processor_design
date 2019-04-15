@@ -1,0 +1,81 @@
+module UART_tx ( // Module for transmission 
+						reset , 
+						clk , 
+						ld_tx_data , 
+						tx_data , 
+						tx_enable , 
+						tx_out , 
+						tx_empty ); 
+						
+// Define ports 						
+input reset ;
+input clk ; // Transmission clock 
+input ld_tx_data ; // Load data to transmit 
+input [7:0] tx_data ; // 8 bit data to transmit 
+input tx_enable ; // Enabling serial transmission 
+output tx_out ; // Transmitting bit 
+output tx_empty ; // Current status of the transmission 
+
+// Define registers 
+reg tx_out ; 
+reg tx_empty ; 
+reg [3:0] tx_cnt ; // Register for count of the bits of UART frame 
+reg [7:0] tx_reg ; // Register to store the data to be transmitted 
+wire txclk ; 
+reg [3:0] counter ; 
+
+/* initial 
+begin 
+txclk=0 ; 
+counter=0 ; 
+end */ 
+
+/* always @ (posedge clk) 
+begin //generate txclk so that rxclk is 16 times faster than txclk 
+counter <= counter + 4'b1; 
+if (counter == 15) 
+		txclk <= ~txclk; 
+end */ 
+
+baudclock baudclock1(.start(1'b1),.clock(clk),.txclk(txclk)); 
+
+always @ (posedge txclk or posedge reset) 
+		if (reset) 
+				begin // Define for the state of no transmission 
+				tx_reg <= 0; 
+				tx_empty <= 1; 
+				tx_out <= 1; 
+				tx_cnt <= 0; 
+				end 
+		else 
+				begin // Define for the state of transmission 
+				if (ld_tx_data) 
+						begin 
+						tx_reg <= tx_data; // Enter the 8bit data to the register 
+						tx_reg tx_empty <= 0; // Indicate the transmission of data with start and stop bits 
+						end 
+				if (tx_enable && !tx_empty) 
+						begin 
+						if (tx_cnt == 0) 
+								begin 
+								tx_out <= 0; // start bit 
+								end 
+								tx_cnt <= tx_cnt + 4'b1; 
+								if (tx_cnt > 0 && tx_cnt < 9) 
+										begin 
+										tx_out <= tx_reg[tx_cnt -1]; // data bits
+										end 
+										if (tx_cnt == 9) 
+												begin 
+												tx_out <= 1; // stop bit 
+												tx_cnt <= 0; 
+												tx_empty <= 1; 
+												end 
+						end 
+						if (!tx_enable) 
+								begin 
+								tx_cnt <= 0; 
+								end 
+				end 
+				
+endmodule

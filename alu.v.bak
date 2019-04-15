@@ -1,0 +1,43 @@
+ //Arithmetic and Logic Unit(ALU) is handles all the arithmetic and logic opreations
+
+module alu( input wire [1:0] alu_op, 
+				input wire clk_50m, 	
+				input wire [15:0] A,
+				input wire [15:0] B,
+				output reg [15:0] alu_result,
+				output reg Z,
+				input wire reset
+			  );
+
+initial begin
+	alu_result <= 16'b0
+end
+			  
+//Define the 4 states using 00,01,10,11 signals
+parameter ADD = 2'00
+parameter SUB = 2'01
+parameter R_SHIRT = 2'b10
+parameter L_SHIFT = 2'b11
+
+always @(posedge clk_50m)
+		begin
+		if (reset == 1)
+			alu_result <= 16'b0
+		else
+			case(alu_op)
+				ADD: begin
+					alu_result <= A+B;
+				SUB: begin
+					alu_result <= B-A;
+				R_SHIFT: begin
+					alu_result <= A<<B;
+				L_SHIFT: begin
+					alu_result <= A>>B;
+			endcase
+			if (alu_result==0)
+				Z<=1;
+			else	
+				Z<=0;
+		end
+end module
+

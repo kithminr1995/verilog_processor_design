@@ -1,0 +1,102 @@
+// Receiver
+
+module UART_rx ( // Module for Recieve
+						input reset , 	
+						input clk , 
+						input uld_rx_data , 
+						output reg[15:0] rx_data , 
+						input rx_enable , 
+						input rx_in , 
+						output reg rx_empty );
+						
+
+reg [7:0] rx_reg ; 
+//reg [15:0] rx_data ; 
+reg [3:0] rx_sample_cnt ; 
+reg [3:0] rx_cnt ; // Register for count of the bits of UART frame 
+//reg rx_empty ; 
+reg rx_in_reg ; // Register to store each incoming bit 
+reg rx_busy ; // Identify the data bits from start and stop bit 
+reg rxclk ;
+
+ //reg [11:0] counter ;						
+ 
+ initial begin 
+	rxclk = 0 ; 
+	//counter = 0 ;
+	
+end
+
+always @ (posedge clk) begin //generate rxclk
+/* counter <= counter + 1; 
+if (counter == 27) */ 
+rxclk = ~rxclk; 
+end
+
+always @ (posedge rxclk or posedge reset)
+
+if (reset) begin // Define for the state of no recieving 
+	rx_reg <= 0; 
+	rx_data <= 0; 
+	rx_sample_cnt <= 0; 
+	rx_cnt <= 0; 
+	rx_empty <= 1; 
+	rx_in_reg <= 1; 
+	rx_busy <= 0; 
+end
+
+else begin
+
+	rx_in_reg <= rx_in;
+	
+	if (rx_enable) begin // Receive data only when rx is enabled
+	
+	
+	
+	if (!rx_busy && !rx_in_reg) begin // Identify the start bit of the UART frame
+			rx_busy <= 1; 
+			rx_sample_cnt <= 0; 
+			rx_cnt <= 0;  
+	end else begin
+	
+	if (rx_busy) begin // Identify the data in the UART frame
+			rx_sample_cnt <= rx_sample_cnt + 4'b1; // Synchronize the recieving data frame with transmitting data frame
+				if (rx_sample_cnt == 8) begin
+						if ((rx_in_reg == 1) && (rx_cnt == 0)) begin
+							rx_busy <= 0;
+							end
+								else begin
+							rx_cnt <= rx_cnt + 4'b1; 
+							if (rx_cnt > 0 && rx_cnt < 9) begin
+								rx_reg[rx_cnt - 1] <= rx_in_reg; 
+							end
+									if (rx_cnt == 9) begin
+								rx_busy <= 0;
+									rx_cnt <= 0;
+									
+								if (rx_in_reg == 1) begin
+									rx_empty <= 0;
+								end
+								end
+							end
+						end
+					end
+						end 
+					end
+					
+					if (uld_rx_data) begin 
+						rx_data <= rx_reg + 16'b0; 
+						rx_empty <= 1; 
+					end
+					
+					if (!rx_enable) begin 
+					rx_busy <= 0; 
+					end
+				end
+endmodule
+				
+				
+					
+						
+						
+						

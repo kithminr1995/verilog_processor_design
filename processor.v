@@ -1,0 +1,89 @@
+//processor
+
+module processor(	input clock,
+						input [7:0] dm_out,
+						input [15:0] im_out,
+						input [1:0] status,
+						
+						output reg dm_en,
+						output reg im_en,
+						output [15:0] pc_out,
+						output [15:0] dar_out,
+						output [15:0] bus_out,
+						output end_process);
+ 
+ 
+
+	wire [2:0] alu_op;
+	wire [15:0] alu_out;
+	
+	wire [15:0] regr_out; 
+	wire [15:0] regr1_out; 
+	wire [15:0] regr2_out; 
+	wire [15:0] regr3_out; 
+	wire [15:0] regr4_out; 
+	wire [15:0] regr5_out;
+	
+	wire [15:0] ac_out;
+	
+	wire [15:0] ir_out;
+	
+	wire [15:0] write_en; 
+	wire [3:0] read_en; 
+	wire [15:0] inc_en;
+	wire [15:0] mem0;
+	wire [15:0] mem1; 
+	wire [15:0] mem2; 
+	wire [15:0] mem3; 
+	wire [15:0] mem4; 
+	wire [15:0] mem5; 
+	wire [15:0] mem6; 
+	wire [15:0] mem7; 
+	wire [15:0] mem8;
+	
+	wire [15:0] z ;
+	
+	regr reg_r(.clock(clock), .write_en(write_en[6]),.datain(bus_out),.dataout(regr_out));
+	
+	regrinc regr_r1(.clock(clock), .write_en(write_en[7]),.datain(bus_out),.dataout(regr1_out),.inc_en(inc_en[4]));
+	
+	regrinc regr_r2(.clock(clock), .write_en(write_en[8]),.datain(bus_out),.dataout(regr2_out),.inc_en(inc_en[5]));
+	
+	regrinc regr_r3(.clock(clock), .write_en(write_en[9]),.datain(bus_out),.dataout(regr3_out),.inc_en(inc_en[6]));
+	
+	regr regr_r4(.clock(clock), .write_en(write_en[10]),.datain(bus_out),.dataout(regr4_out));
+	
+	regr regr_r5(.clock(clock), .write_en(write_en[11]),.datain(bus_out),.dataout(regr5_out));
+	
+	regrinc dar(.clock(clock), .write_en(write_en[2]),.datain(bus_out),.dataout(dar_out),.inc_en(inc_en[3]));
+	
+	regr ir(.clock(clock), .write_en(write_en [4]),.datain(bus_out),.dataout(ir_out));
+	
+	bus
+	bus1(.r1(regr1_out),.r2(regr2_out),.r3(regr3_out),.r4(regr4_out),.r5(regr5_out),.r(regr_out),.dar(dar_out),.ir(ir_out),.pc(pc_out),.ac(ac_out),.dm(dm_out),.im(im_out),.busout(bus_out),.read_en(read_en),.clock(clock));
+	
+	ac ac1(.clock(clock), .write_en(write_en[5]),.datain(bus_out),.dataout(ac_out),.alu_out(alu_out),.alu_to_ac(write_en[14]),.inc_en(inc_en[2]));
+	
+	regrinc pc(.clock(clock), .write_en(write_en[1]),.datain(bus_out),.dataout(pc_out),.inc_en(inc_en[1]));
+	
+	alu
+	
+	alu1(.clock(clock),.in1(regr_out),.in2(ac_out),.alu_op(alu_op),.alu_out(alu_out),.z(z));
+	
+	control
+	
+	control1(.clock(clock),.z(z),.instruction(ir_out),.alu_op(alu_op),.write_en(write_en),.read_en(read_en),.inc_en(inc_en),.end_process(end_process),.status(status));
+	
+	always @ (posedge clock)
+	
+	if (status == 2'b01)begin
+			dm_en <= write_en[12];
+			im_en <= write_en[13];
+			
+	end
+	
+	endmodule
+			
+			
+	
+	
